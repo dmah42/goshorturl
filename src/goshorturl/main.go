@@ -25,7 +25,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// lookup shorturl
 	var longurl string
 	var access_count int
-	err := dbConn.QueryRow("select long,access_count from url where short=?", shorturl).Scan(&longurl, &access_count)
+	err := dbConn.QueryRow("select `long`,`access_count` from `url` where short=?", shorturl).Scan(&longurl, &access_count)
 
 	// TODO: update accessed and access_count
 
@@ -47,7 +47,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
-	c, err := sql.Open("mysql", *user+":"+*pwd+"@"+*host+"/"+*db)
+	c, err := sql.Open("mysql", *user+":"+*pwd+"@("+*host+")/"+*db)
 	if err != nil {
 		log.Fatal("Failed to open sql dbConnection")
 	}
