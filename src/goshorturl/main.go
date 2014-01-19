@@ -27,8 +27,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var access_count int
 	err := dbConn.QueryRow("select `long`,`access_count` from `url` where short=?", shorturl).Scan(&longurl, &access_count)
 
-	// TODO: update accessed and access_count
-
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("%q not found", shorturl)
@@ -56,6 +54,7 @@ func main() {
 
 	r := mux.NewRouter()
 	// TODO: dashboard with metrics
+	// TODO: ui for adding short urls
 	r.HandleFunc("/{shorturl}", Handler).Methods("GET")
 	http.Handle("/", r)
 
