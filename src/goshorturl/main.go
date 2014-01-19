@@ -15,6 +15,7 @@ var (
 	db             = flag.String("db", "", "the db")
 	user           = flag.String("user", "", "the db user")
 	pwd            = flag.String("pwd", "", "the db password")
+	port	       = flag.String("port", "http", "the port to listen on")
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	flag.Parse()
+
 	dbConn, err := sql.Open("mysql", *user+":"+*pwd+"@/"+*db)
 	if err != nil {
 		log.Fatal("Failed to open sql dbConnection")
@@ -51,4 +54,6 @@ func main() {
 	// TODO: dashboard with metrics
 	r.HandleFunc("/{shorturl}", Handler).Methods("GET")
 	http.Handle("/", r)
+
+	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }
