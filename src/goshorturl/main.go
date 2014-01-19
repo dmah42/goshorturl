@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -27,8 +28,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var access_count int
 	err := dbConn.QueryRow("select `long`,`access_count` from `url` where short=?", shorturl).Scan(&longurl, &access_count)
 
-	// TODO: update accessed and access_count
-
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("%q not found", shorturl)
@@ -38,8 +37,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 
 	default:
-		access_count++
 		log.Printf("%q -> %q", shorturl, longurl)
+		access_count++
+		access_time := time.Now().UTC()
+		_, err := dbConn.Exec("UPDATE `url` SET `access_count`=?,`accessed`=? WHERE short=?", access_count, access_time, shorturl)
+		if err != nil {
+			log.Printf("Failed to update access information: %v\n", err)
+		}
 		http.Redirect(w, r, longurl, http.StatusFound)
 	}
 }
@@ -53,6 +57,7 @@ func main() {
 	}
 	dbConn = c
 	defer dbConn.Close()
+	// TODO: prepare statements
 
 	r := mux.NewRouter()
 	// TODO: dashboard with metrics
