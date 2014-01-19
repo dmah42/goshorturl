@@ -13,6 +13,7 @@ import (
 var (
 	dbConn *sql.DB = nil
 	db             = flag.String("db", "", "the db")
+	host	       = flag.String("host", "", "the db host")
 	user           = flag.String("user", "", "the db user")
 	pwd            = flag.String("pwd", "", "the db password")
 	port	       = flag.String("port", "http", "the port to listen on")
@@ -30,6 +31,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case err == sql.ErrNoRows:
+		log.Printf("%q not found", shorturl)
 		http.NotFound(w, r)
 
 	case err != nil:
@@ -37,6 +39,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		access_count++
+		log.Print("%q -> %q", shorturl, longurl)
 		http.Redirect(w, r, longurl, 200)
 	}
 }
@@ -44,10 +47,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
-	dbConn, err := sql.Open("mysql", *user+":"+*pwd+"@/"+*db)
+	c, err := sql.Open("mysql", *user+":"+*pwd+"@"+*host+"/"+*db)
 	if err != nil {
 		log.Fatal("Failed to open sql dbConnection")
 	}
+	dbConn = c
 	defer dbConn.Close()
 
 	r := mux.NewRouter()
