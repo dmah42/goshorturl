@@ -39,8 +39,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		access_count++
-		log.Print("%q -> %q", shorturl, longurl)
-		http.Redirect(w, r, longurl, 200)
+		log.Printf("%q -> %q", shorturl, longurl)
+		http.Redirect(w, r, longurl, http.StatusFound)
 	}
 }
 
