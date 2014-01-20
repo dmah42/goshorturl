@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -23,7 +24,32 @@ var (
 	updateStmt *sql.Stmt = nil
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func RootHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := dbConn.Query("SELECT `longurl`,`shorturl`,`access_count` FROM `url` ORDER BY access_count")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
+		return
+	}
+	// TODO: template
+	for rows.Next() {
+	        var shorturl string
+		var longurl string
+		var access_count int
+		if err := rows.Scan(&shorturl, longurl, access_count); err != nil {
+			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte(fmt.Sprintf("%s -> %s: %d\n", shorturl, longurl, access_count)))
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: form for creating new one
+}
+
+func ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 	shorturl := mux.Vars(r)["shorturl"]
 
 	// lookup shorturl
@@ -74,9 +100,8 @@ func main() {
 	updateStmt = updateAccess
 
 	r := mux.NewRouter()
-	// TODO: dashboard with metrics
-	// TODO: ui for adding short urls
-	r.HandleFunc("/{shorturl}", Handler).Methods("GET")
+	r.HandleFunc("/", RootHandler).Methods("GET")
+	r.HandleFunc("/{shorturl}", ShortURLHandler).Methods("GET")
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+*port, nil))
