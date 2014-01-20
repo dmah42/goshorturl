@@ -35,7 +35,7 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	        var shorturl string
 		var longurl string
 		var access_count int
-		if err := rows.Scan(&shorturl, longurl, access_count); err != nil {
+		if err := rows.Scan(&longurl, &shorturl, &access_count); err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 			return
 		}
