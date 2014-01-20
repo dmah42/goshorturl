@@ -25,7 +25,7 @@ var (
 )
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := dbConn.Query("SELECT `longurl`,`shorturl`,`access_count` FROM `url` ORDER BY access_count")
+	rows, err := dbConn.Query("SELECT `long`,`short`,`access_count` FROM `url` ORDER BY access_count DESC")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 		return
