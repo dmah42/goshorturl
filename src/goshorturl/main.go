@@ -12,12 +12,15 @@ import (
 )
 
 var (
-	dbConn *sql.DB = nil
 	db             = flag.String("db", "", "the db")
 	host	       = flag.String("host", "", "the db host")
 	user           = flag.String("user", "", "the db user")
 	pwd            = flag.String("pwd", "", "the db password")
 	port	       = flag.String("port", "http", "the port to listen on")
+
+	dbConn *sql.DB = nil
+	selectStmt *sql.Stmt = nil
+	updateStmt *sql.Stmt = nil
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +29,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// lookup shorturl
 	var longurl string
 	var access_count int
-	err := dbConn.QueryRow("select `long`,`access_count` from `url` where short=?", shorturl).Scan(&longurl, &access_count)
+	err := selectStmt.QueryRow(shorturl).Scan(&longurl, &access_count)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -40,7 +43,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%q -> %q", shorturl, longurl)
 		access_count++
 		access_time := time.Now().UTC()
-		_, err := dbConn.Exec("UPDATE `url` SET `access_count`=?,`accessed`=? WHERE short=?", access_count, access_time, shorturl)
+		_, err := updateStmt.Exec(access_count, access_time, shorturl)
 		if err != nil {
 			log.Printf("Failed to update access information: %v\n", err)
 		}
@@ -57,7 +60,18 @@ func main() {
 	}
 	dbConn = c
 	defer dbConn.Close()
-	// TODO: prepare statements
+
+	selectLongURL, err := dbConn.Prepare("SELECT `long`,`access_count` FROM `url` WHERE short=?")
+	if err != nil {
+		log.Fatal("Failed to prepare selectStmt: ", err)
+	}
+	selectStmt = selectLongURL
+
+	updateAccess, err := dbConn.Prepare("UPDATE `url` SET `access_count`=?,`accessed`=? WHERE short=?")
+	if err != nil {
+		log.Fatal("Failed to prepare updateStmt: ", err)
+	}
+	updateStmt = updateAccess
 
 	r := mux.NewRouter()
 	// TODO: dashboard with metrics
